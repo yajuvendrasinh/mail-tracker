@@ -4,7 +4,8 @@ CREATE TABLE IF NOT EXISTS tracked_emails (
   subject TEXT,
   recipient TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW(),
-  user_id UUID -- Optional: if you want to link this to a login
+  user_id UUID, -- Optional: if you want to link this to a login
+  sender_ip TEXT -- Added to automatically ignore sender's own opens
 );
 
 -- 2. Table to store every "Open" event

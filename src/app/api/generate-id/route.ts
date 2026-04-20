@@ -17,7 +17,11 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { subject, recipient, user_id } = body;
 
-    console.log(`[Generate-ID] Attempting to track for: ${recipient} | Subject: ${subject}`);
+    // Capture the sender's current IP
+    const forwardedFor = req.headers.get('x-forwarded-for');
+    const senderIp = forwardedFor ? forwardedFor.split(',')[0].trim() : '127.0.0.1';
+
+    console.log(`[Generate-ID] Attempting to track for: ${recipient} | Subject: ${subject} | Sender IP: ${senderIp}`);
 
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL.includes('placeholder')) {
       console.error('[Generate-ID] CRITICAL: Supabase URL is not configured in Vercel environment variables!');
@@ -30,6 +34,7 @@ export async function POST(req: Request) {
         subject: subject || 'No Subject',
         recipient: recipient || 'Unknown Recipient',
         user_id: user_id || null,
+        sender_ip: senderIp
       })
       .select('id')
       .single();

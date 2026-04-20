@@ -23,13 +23,24 @@ export async function GET(
   const region = req.headers.get('x-vercel-ip-country-region') || 'Unknown';
   const userAgent = req.headers.get('user-agent') || 'Unknown';
 
-  // 2. Logic to ignore your own IP (Self-Tracking)
-  // Check for both IPv4 127.0.0.1 and IPv6 ::1 for localhost
+  // 2. Fetch the email metadata to get the recorded sender_ip
+  const { data: emailData, error: emailError } = await supabaseAdmin
+    .from('tracked_emails')
+    .select('sender_ip')
+    .eq('id', id)
+    .single();
+
+  if (emailError) {
+    console.warn(`[Track] Could not find email meta for ID: ${id}. Proceeding with standard log.`);
+  }
+
+  // 3. Logic to ignore the sender (Self-Tracking)
+  const isSender = emailData?.sender_ip === ip;
   const isLocalhost = ip === '127.0.0.1' || ip === '::1';
   const isOfficeIp = process.env.MY_OFFICE_IP && ip.includes(process.env.MY_OFFICE_IP);
 
-  if (isOfficeIp || (process.env.NODE_ENV === 'development' && isLocalhost)) {
-    console.log(`Tracking ignored for IP: ${ip} (Office/Localhost)`);
+  if (isSender || isOfficeIp || (process.env.NODE_ENV === 'development' && isLocalhost)) {
+    console.log(`[Track] Ignored self-hit for email_id: ${id} from IP: ${ip}`);
     return new Response(PIXEL, {
       headers: { 
         'Content-Type': 'image/gif',
@@ -39,7 +50,7 @@ export async function GET(
     });
   }
 
-  // 3. Log the open synchronously (Essential for Vercel Free Tier)
+  // 4. Log the open synchronously (Essential for Vercel Free Tier)
   const isProxy =
     userAgent.includes('GoogleImageProxy') ||
     userAgent.includes('via ggpht.com') ||
