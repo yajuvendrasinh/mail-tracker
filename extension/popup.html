@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Mail Tracker</title>
+  <style>
+    body {
+      width: 250px;
+      padding: 16px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      margin: 0;
+    }
+    h2 {
+      font-size: 16px;
+      margin-top: 0;
+      color: #1a73e8;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .status-card {
+      background: #f8f9fa;
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 16px;
+      border: 1px solid #e0e0e0;
+    }
+    .status-item {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      font-size: 13px;
+    }
+    .status-item:last-child {
+      margin-bottom: 0;
+    }
+    .status-label {
+      color: #5f6368;
+    }
+    .status-value {
+      font-weight: 500;
+      color: #188038;
+    }
+    .status-value.error {
+      color: #d93025;
+    }
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 10px;
+      background: #1a73e8;
+      color: white;
+      text-align: center;
+      text-decoration: none;
+      border-radius: 4px;
+      font-size: 14px;
+      font-weight: 500;
+      border: none;
+      cursor: pointer;
+      box-sizing: border-box;
+    }
+    .btn:hover {
+      background: #1765cc;
+    }
+    .settings {
+      margin-top: 16px;
+      padding-top: 12px;
+      border-top: 1px solid #eee;
+    }
+    .input-group label {
+      display: block;
+      font-size: 11px;
+      color: #777;
+      margin-bottom: 4px;
+    }
+    input {
+      width: 100%;
+      padding: 6px;
+      font-size: 12px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+  </style>
+</head>
+<body>
+  <h2>
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M22 17H2a3 3 0 0 0 0 6h20a3 3 0 0 0 0-6Z"/>
+      <path d="M15 6v12M9 10v8M21 14h-2.5a2.5 2.5 0 0 0 0 5H21M3 14h2.5a2.5 2.5 0 0 1 0 5H3M12 2v4"/>
+    </svg>
+    Mail Tracker
+  </h2>
+
+  <div class="status-card">
+    <div class="status-item">
+      <span class="status-label">Extension:</span>
+      <span class="status-value" id="ext-status">Active</span>
+    </div>
+    <div class="status-item">
+      <span class="status-label">Default Mode:</span>
+      <span class="status-value">Tracking ON</span>
+    </div>
+  </div>
+
+  <button id="view-dashboard" class="btn">View Dashboard</button>
+
+  <div class="settings">
+    <div class="input-group">
+      <label for="portal-url">Portal URL</label>
+      <input type="text" id="portal-url" placeholder="http://localhost:3000">
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
