@@ -37,7 +37,8 @@ export async function POST(req: Request) {
       }
     });
   } catch (err) {
-    return NextResponse.json({ error: 'Invalid request' }, { status: 400 }, {
+    return NextResponse.json({ error: 'Invalid request' }, { 
+      status: 400,
       headers: {
         'Access-Control-Allow-Origin': '*',
       }
