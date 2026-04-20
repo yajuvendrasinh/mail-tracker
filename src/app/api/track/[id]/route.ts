@@ -39,30 +39,30 @@ export async function GET(
     });
   }
 
-  // 3. Use 'after' to handle DB logging in the background
-  after(async () => {
-    const isProxy =
-      userAgent.includes('GoogleImageProxy') ||
-      userAgent.includes('via ggpht.com') ||
-      userAgent.includes('AppleNewsProxy');
+  // 3. Log the open synchronously (Essential for Vercel Free Tier)
+  const isProxy =
+    userAgent.includes('GoogleImageProxy') ||
+    userAgent.includes('via ggpht.com') ||
+    userAgent.includes('AppleNewsProxy');
 
-    try {
-      console.log(`Logging open for email_id: ${id} from IP: ${ip}`);
-      const { error } = await supabaseAdmin.from('email_opens').insert({
-        email_id: id,
-        ip_address: ip,
-        city,
-        country,
-        region,
-        user_agent: userAgent,
-        is_proxy: isProxy,
-      });
-      
-      if (error) console.error('Error logging open in Supabase:', error);
-    } catch (err) {
-      console.error('Unexpected error in after hook:', err);
+  try {
+    console.log(`[Track] Logging open for email_id: ${id} from IP: ${ip}`);
+    const { error } = await supabaseAdmin.from('email_opens').insert({
+      email_id: id,
+      ip_address: ip,
+      city,
+      country,
+      region,
+      user_agent: userAgent,
+      is_proxy: isProxy,
+    });
+    
+    if (error) {
+      console.error('[Track] Supabase Insert Error:', error);
     }
-  });
+  } catch (err) {
+    console.error('[Track] Unexpected error:', err);
+  }
 
   // 4. Send the response instantly with ultra-aggressive cache-busting
   return new Response(PIXEL, {
@@ -74,6 +74,7 @@ export async function GET(
       'Expires': '0',
       'Last-Modified': new Date().toUTCString(),
       'ETag': `"${id}-${Date.now()}"`, // Unique ETag to force a re-fetch
+      'X-Tracker-Status': 'success',
     },
   });
 }
