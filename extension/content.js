@@ -96,7 +96,7 @@ async function injectPixel(composeWindow, id) {
 
   chrome.runtime.sendMessage({ action: "getSettings" }, (settings) => {
     const portalUrl = settings.portalUrl || "http://localhost:3000";
-    const trackUrl = `${portalUrl}/api/track/${id}`;
+    const trackUrl = `${portalUrl}/api/track/${id}?t=${Date.now()}`;
     
     const pixelHtml = `<img src="${trackUrl}" width="1" height="1" style="display:none !important;" data-tracker-id="${id}" />`;
     
