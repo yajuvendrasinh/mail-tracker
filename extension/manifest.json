@@ -12,7 +12,8 @@
     "https://mail.google.com/*",
     "http://localhost.com/*",
     "http://localhost:3000/*",
-    "http://localhost:3001/*"
+    "http://localhost:3001/*",
+    "https://*.vercel.app/*"
   ],
   "background": {
     "service_worker": "background.js"
