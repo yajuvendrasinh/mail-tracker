@@ -64,13 +64,16 @@ export async function GET(
     }
   });
 
-  // 4. Send the response instantly
+  // 4. Send the response instantly with ultra-aggressive cache-busting
   return new Response(PIXEL, {
     headers: {
       'Content-Type': 'image/gif',
-      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Cache-Control': 'no-cache, no-store, must-revalidate, proxy-revalidate, max-age=0',
+      'Surrogate-Control': 'no-store',
       'Pragma': 'no-cache',
       'Expires': '0',
+      'Last-Modified': new Date().toUTCString(),
+      'ETag': `"${id}-${Date.now()}"`, // Unique ETag to force a re-fetch
     },
   });
 }
