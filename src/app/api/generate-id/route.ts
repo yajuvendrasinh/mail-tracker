@@ -17,6 +17,13 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { subject, recipient, user_id } = body;
 
+    console.log(`[Generate-ID] Attempting to track for: ${recipient} | Subject: ${subject}`);
+
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL.includes('placeholder')) {
+      console.error('[Generate-ID] CRITICAL: Supabase URL is not configured in Vercel environment variables!');
+      return NextResponse.json({ error: 'Server configuration missing' }, { status: 500 });
+    }
+
     const { data, error } = await supabaseAdmin
       .from('tracked_emails')
       .insert({

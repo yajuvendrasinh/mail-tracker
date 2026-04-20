@@ -28,10 +28,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 });
 
 async function handleGenerateId(data) {
-  const { portalUrl } = await chrome.storage.local.get("portalUrl");
-  const url = portalUrl || DEFAULT_PORTAL_URL;
+    const { portalUrl } = await chrome.storage.local.get("portalUrl");
+  // Clean URL: remove any trailing slashes to avoid //api/...
+  const baseUrl = (portalUrl || DEFAULT_PORTAL_URL).replace(/\/+$/, "");
+  const url = `${baseUrl}/api/generate-id`;
 
-  const response = await fetch(`${url}/api/generate-id`, {
+  console.log(`[Extension] Fetching tracking ID from: ${url}`);
+
+  const response = await fetch(url, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
