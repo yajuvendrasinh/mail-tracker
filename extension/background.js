@@ -1,4 +1,4 @@
-const DEFAULT_PORTAL_URL = "http://localhost:3000";
+const DEFAULT_PORTAL_URL = "https://mail-tracker-ten.vercel.app";
 
 // Handle installation
 chrome.runtime.onInstalled.addListener(() => {

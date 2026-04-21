@@ -51,14 +51,44 @@ function injectTrackerToggle(composeWindow) {
   // Hook into the send button
   const sendButton = composeWindow.querySelector(SELECTORS.sendButton);
   if (sendButton) {
-    sendButton.addEventListener('click', () => handleSend(composeWindow));
+    // We capture the click to intercept it, prevent default Gmail behavior until our pixel is injected
+    sendButton.addEventListener('click', async (e) => {
+      // If we are already handling the send or tracking is disabled, let it pass
+      if (sendButton.dataset.mtHandling === "true" || sendButton.dataset.mtReady === "true") {
+        return;
+      }
+
+      const isTrackEnabled = composeWindow.querySelector('#mt-track-checkbox')?.checked;
+      if (!isTrackEnabled) return;
+
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+
+      sendButton.dataset.mtHandling = "true";
+      sendButton.innerHTML = 'Adding Tracker...';
+      sendButton.style.opacity = '0.7';
+
+      try {
+        await handleSend(composeWindow);
+        // Add a 1-second delay so Gmail DOM has time to actually register the newly inserted node
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      } catch (err) {
+        console.error("Gmail Tracker: Error during send interception", err);
+      } finally {
+        sendButton.dataset.mtHandling = "false";
+        sendButton.dataset.mtReady = "true";
+        sendButton.innerHTML = 'Send';
+        sendButton.style.opacity = '1';
+
+        // Re-trigger the click so Gmail actually sends it
+        sendButton.click();
+      }
+    }, true); // use capture phase
   }
 }
 
 async function handleSend(composeWindow) {
-  const isTrackEnabled = composeWindow.querySelector('#mt-track-checkbox').checked;
-  if (!isTrackEnabled) return;
-
   console.log("Gmail Tracker: Preparing hit...");
 
   // 1. Scraping metadata
@@ -78,30 +108,44 @@ async function handleSend(composeWindow) {
   }
 
   // 2. Request unique ID from background script
-  chrome.runtime.sendMessage({ 
-    action: "generateId", 
-    data: { subject, recipient } 
-  }, (response) => {
-    if (response && response.success) {
-      injectPixel(composeWindow, response.id);
-    } else {
-      console.error("Gmail Tracker: Failed to generate ID", response?.error);
-    }
+  return new Promise((resolve, reject) => {
+    chrome.runtime.sendMessage({
+      action: "generateId",
+      data: { subject, recipient }
+    }, async (response) => {
+      if (response && response.success) {
+        try {
+          await injectPixel(composeWindow, response.id);
+          resolve();
+        } catch(err) {
+          reject(err);
+        }
+      } else {
+        console.error("Gmail Tracker: Failed to generate ID", response?.error);
+        reject(new Error("Failed to generate ID"));
+      }
+    });
   });
 }
 
 async function injectPixel(composeWindow, id) {
-  const body = composeWindow.querySelector(SELECTORS.messageBody);
-  if (!body) return;
+  return new Promise((resolve, reject) => {
+    const body = composeWindow.querySelector(SELECTORS.messageBody);
+    if (!body) {
+      return reject(new Error("No message body found"));
+    }
 
-  chrome.runtime.sendMessage({ action: "getSettings" }, (settings) => {
-    const portalUrl = settings.portalUrl || "http://localhost:3000";
-    const trackUrl = `${portalUrl}/api/track/${id}`;
-    
-    const pixelHtml = `<img src="${trackUrl}" width="1" height="1" style="display:none !important;" data-tracker-id="${id}" />`;
-    
-    // Append to the end of the body without destroying listeners
-    body.insertAdjacentHTML('beforeend', pixelHtml);
-    console.log("Gmail Tracker: Pixel injected.", id);
+    chrome.runtime.sendMessage({ action: "getSettings" }, (settings) => {
+      // Use portalUrl if defined, otherwise fallback to the vercel app
+      const portalUrl = settings.portalUrl || "https://mail-tracker-ten.vercel.app";
+      const trackUrl = `${portalUrl}/api/track/${id}`;
+
+      const pixelHtml = `<img src="${trackUrl}" width="1" height="1" style="display:none !important;" data-tracker-id="${id}" />`;
+
+      // Append to the end of the body without destroying listeners
+      body.insertAdjacentHTML('beforeend', pixelHtml);
+      console.log("Gmail Tracker: Pixel injected.", id);
+      resolve();
+    });
   });
 }
