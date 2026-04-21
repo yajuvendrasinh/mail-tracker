@@ -115,12 +115,12 @@ export default async function DashboardPage() {
         </Card>
         <Card className="border-none shadow-sm bg-secondary/20">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Proxy/Bot Detections</CardTitle>
+            <CardTitle className="text-sm font-medium">Privacy-Shielded Opens</CardTitle>
             <ShieldAlert className="h-4 w-4 text-amber-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.proxyOpens}</div>
-            <p className="text-xs text-muted-foreground">Filtered signals</p>
+            <p className="text-xs text-muted-foreground">Filtered security signals</p>
           </CardContent>
         </Card>
       </div>

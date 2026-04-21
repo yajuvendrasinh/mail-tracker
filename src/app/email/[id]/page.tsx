@@ -29,8 +29,22 @@ import { buttonVariants } from "@/components/ui/button";
 function getDeviceIcon(userAgent: string) {
   const ua = userAgent.toLowerCase();
   if (ua.includes('mobi')) return <Smartphone className="h-4 w-4" />;
+  if (ua.includes('google') || ua.includes('ggpht')) return <ShieldQuestion className="h-4 w-4 text-blue-500" />;
+  if (ua.includes('apple') || ua.includes('cloud')) return <ShieldQuestion className="h-4 w-4 text-gray-500" />;
   if (ua.includes('bot') || ua.includes('proxy')) return <ShieldQuestion className="h-4 w-4" />;
   return <Monitor className="h-4 w-4" />;
+}
+
+// Helper to get proxy badge
+function getProxyBadge(userAgent: string) {
+  const ua = userAgent.toLowerCase();
+  if (ua.includes('google') || ua.includes('ggpht')) {
+    return <Badge variant="secondary" className="text-[10px] h-5 bg-blue-50 text-blue-700 border-blue-200">Gmail Security Proxy</Badge>;
+  }
+  if (ua.includes('apple') || ua.includes('cloud')) {
+    return <Badge variant="secondary" className="text-[10px] h-5 bg-gray-50 text-gray-700 border-gray-200">Apple Privacy Proxy</Badge>;
+  }
+  return <Badge variant="outline" className="text-[10px] h-5">Security Proxy</Badge>;
 }
 
 export default async function EmailDetailPage({
@@ -134,21 +148,18 @@ export default async function EmailDetailPage({
                       <Badge variant="secondary" className="text-[10px] h-5 flex items-center gap-1">
                         <Hash className="h-2.5 w-2.5" /> {open.ip_address}
                       </Badge>
-                      {open.is_proxy && (
-                        <Badge variant="destructive" className="text-[10px] h-5">
-                          Proxy/Bot
-                        </Badge>
-                      )}
+                      {open.is_proxy && getProxyBadge(open.user_agent)}
                     </div>
                     
                     <div className="text-[10px] text-muted-foreground font-mono truncate border-t border-secondary mt-2 pt-2">
-                      UA: {open.user_agent}
+                      {open.user_agent}
                     </div>
                   </div>
                 </div>
               </div>
             ))}
           </div>
+
         ) : (
           <Card className="border-dashed border-2 py-12">
             <CardContent className="flex flex-col items-center justify-center space-y-3">
