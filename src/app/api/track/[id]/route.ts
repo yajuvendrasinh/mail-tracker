@@ -50,18 +50,22 @@ export async function GET(
     });
   }
 
-  // 4. Log the open synchronously (Essential for Vercel Free Tier)
-  const isProxy =
-    userAgent.includes('GoogleImageProxy') ||
-    userAgent.includes('via ggpht.com') ||
-    userAgent.includes('AppleNewsProxy');
+  // 4. Enhanced Proxy/Bot detection
+  const isGoogleProxy = userAgent.includes('GoogleImageProxy') || userAgent.includes('via ggpht.com');
+  const isAppleProxy = userAgent.includes('AppleNewsProxy') || userAgent.includes('CloudFlare-AlwaysOnline');
+  const isProxy = isGoogleProxy || isAppleProxy || userAgent.includes('bot') || userAgent.includes('crawler');
+
+  // Use a more descriptive label for the location if it's a known proxy
+  let displayCity = city;
+  if (city === 'Unknown' && isGoogleProxy) displayCity = 'Gmail Proxy';
+  if (city === 'Unknown' && isAppleProxy) displayCity = 'Apple Mail Proxy';
 
   try {
-    console.log(`[Track] Logging open for email_id: ${id} from IP: ${ip}`);
+    console.log(`[Track] Logging open for email_id: ${id} from IP: ${ip} (Proxy: ${isProxy})`);
     const { error } = await supabaseAdmin.from('email_opens').insert({
       email_id: id,
       ip_address: ip,
-      city,
+      city: displayCity,
       country,
       region,
       user_agent: userAgent,
