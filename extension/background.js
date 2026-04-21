@@ -1,13 +1,25 @@
-const DEFAULT_PORTAL_URL = "http://localhost:3000";
+const DEFAULT_PORTAL_URL = "https://mail-tracker-ten.vercel.app";
 
-// Handle installation
-chrome.runtime.onInstalled.addListener(() => {
-  chrome.storage.local.set({ 
-    trackingEnabled: true,
-    portalUrl: DEFAULT_PORTAL_URL
+// Handle startup migration to ensure settings are always correct
+chrome.runtime.onStartup.addListener(migrateSettings);
+chrome.runtime.onInstalled.addListener(migrateSettings);
+
+function migrateSettings() {
+  chrome.storage.local.get(["portalUrl"], (data) => {
+    const currentUrl = data.portalUrl;
+    // Migrate if it's currently localhost, placeholder, or not set
+    if (!currentUrl || currentUrl.includes("localhost") || currentUrl.includes("placeholder")) {
+      chrome.storage.local.set({ 
+        trackingEnabled: true,
+        portalUrl: DEFAULT_PORTAL_URL
+      });
+      console.log(`Settings migrated to: ${DEFAULT_PORTAL_URL}`);
+    }
   });
-  console.log("Gmail Tracker Injector installed.");
-});
+}
+
+// Also run migration immediately in case neither event fired recently
+migrateSettings();
 
 // Message listener
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
@@ -41,6 +53,7 @@ async function handleGenerateId(data) {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
+      id: data.id || null,
       subject: data.subject,
       recipient: data.recipient,
       user_id: data.userId || null

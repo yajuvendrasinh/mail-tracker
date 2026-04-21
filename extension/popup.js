@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Open dashboard
   viewDashboardBtn.addEventListener('click', () => {
-    const url = portalUrlInput.value || "http://localhost:3000";
+    const url = portalUrlInput.value || "https://mail-tracker-ten.vercel.app";
     chrome.tabs.create({ url: url });
   });
 });

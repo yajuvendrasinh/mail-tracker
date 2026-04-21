@@ -15,13 +15,13 @@ export async function OPTIONS() {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { subject, recipient, user_id } = body;
+    const { id: providedId, subject, recipient, user_id } = body;
 
     // Capture the sender's current IP
     const forwardedFor = req.headers.get('x-forwarded-for');
     const senderIp = forwardedFor ? forwardedFor.split(',')[0].trim() : '127.0.0.1';
 
-    console.log(`[Generate-ID] Attempting to track for: ${recipient} | Subject: ${subject} | Sender IP: ${senderIp}`);
+    console.log(`[Generate-ID] Attempting to register for: ${recipient} | ID: ${providedId || 'New'} | Subject: ${subject} | Sender IP: ${senderIp}`);
 
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL.includes('placeholder')) {
       console.error('[Generate-ID] CRITICAL: Supabase URL is not configured in Vercel environment variables!');
@@ -31,6 +31,7 @@ export async function POST(req: Request) {
     const { data, error } = await supabaseAdmin
       .from('tracked_emails')
       .insert({
+        id: providedId || undefined, // Use provided ID or let Supabase generate one
         subject: subject || 'No Subject',
         recipient: recipient || 'Unknown Recipient',
         user_id: user_id || null,
