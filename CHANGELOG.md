@@ -16,10 +16,10 @@ All notable changes to the **Mail Tracker** project will be documented in this f
 - **Dashboard Tagging:** Any device that visits the Dashboard or Email Insight page is automatically tagged as a "Sender" device, effectively silencing self-opens from that device forever.
 - **Mobile Support:** Enabled a simple "Visit Dashboard" workflow to register mobile devices as "Sender" devices.
 
-### 📊 Dashboard & UI Improvements
-- **Privacy Proxy Detection:** Enhanced detection of **Google Image Proxy** and **Apple Privacy Proxy** to avoid false location data.
-- **Proxy Branding:** Added specific badges for "Gmail Security Proxy" and "Apple Privacy Proxy" in the activity timeline.
-- **Device Intelligence:** Added icons for Mobile, Desktop, and Proxy bots in the activity timeline.
+### 🛠️ Infrastructure & Fixes
+- **Vercel Server Fix:** Resolved a 500 error caused by improper `cookies().set()` usage in Server Components.
+- **Client-Side Tagging:** Moved "Sender Tagging" logic to a specialized `SenderTag` Client Component for safe, cross-device registration.
+- **Improved Layout:** Integrated `SenderTag` into the root layout for universal device coverage.
 
 ---
 
