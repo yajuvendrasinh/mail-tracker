@@ -30,7 +30,6 @@ import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { cookies } from "next/headers";
 
 async function getStats() {
   const { count: totalEmails } = await supabaseAdmin
@@ -72,15 +71,6 @@ async function getRecentEmails() {
 }
 
 export default async function DashboardPage() {
-  // Tag this browser as a "Sender" so opens from here are ignored
-  const cookieStore = await cookies();
-  cookieStore.set('is_sender', 'true', { 
-    maxAge: 60 * 60 * 24 * 365 * 10, // 10 years
-    path: '/',
-    secure: true,
-    sameSite: 'none' // Important for tracking pixels
-  });
-
   const stats = await getStats();
   const emails = await getRecentEmails();
 
