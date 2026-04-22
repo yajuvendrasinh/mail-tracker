@@ -25,6 +25,7 @@ import Link from "next/link";
 import { format } from "date-fns";
 import { notFound } from "next/navigation";
 import { buttonVariants } from "@/components/ui/button";
+import { cookies } from "next/headers";
 
 function getDeviceIcon(userAgent: string) {
   const ua = userAgent.toLowerCase();
@@ -53,6 +54,15 @@ export default async function EmailDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+
+  // Tag this browser as a "Sender" so opens from here are ignored
+  const cookieStore = await cookies();
+  cookieStore.set('is_sender', 'true', { 
+    maxAge: 60 * 60 * 24 * 365 * 10, // 10 years
+    path: '/',
+    secure: true,
+    sameSite: 'none'
+  });
 
   // Fetch email details
   const { data: email, error: emailError } = await supabaseAdmin

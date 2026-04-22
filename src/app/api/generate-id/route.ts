@@ -17,9 +17,10 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { id: providedId, subject, recipient, user_id } = body;
 
-    // Capture the sender's current IP
+    // Capture the sender's current IP and User Agent
     const forwardedFor = req.headers.get('x-forwarded-for');
     const senderIp = forwardedFor ? forwardedFor.split(',')[0].trim() : '127.0.0.1';
+    const userAgent = req.headers.get('user-agent') || 'Unknown';
 
     console.log(`[Generate-ID] Attempting to register for: ${recipient} | ID: ${providedId || 'New'} | Subject: ${subject} | Sender IP: ${senderIp}`);
 
@@ -35,7 +36,8 @@ export async function POST(req: Request) {
         subject: subject || 'No Subject',
         recipient: recipient || 'Unknown Recipient',
         user_id: user_id || null,
-        sender_ip: senderIp
+        sender_ip: senderIp,
+        sender_ua: userAgent
       })
       .select('id')
       .single();
