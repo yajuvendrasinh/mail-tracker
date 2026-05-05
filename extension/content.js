@@ -51,7 +51,8 @@ const observer = new MutationObserver((mutations) => {
 observer.observe(document.body, { childList: true, subtree: true });
 
 async function initializeComposeWindow(composeWindow) {
-  if (composeWindow.querySelector('.mt-tracker-toggle-container')) return;
+  if (composeWindow.dataset.mtInitialized === 'true') return;
+  composeWindow.dataset.mtInitialized = 'true';
 
   console.log("Gmail Tracker: New compose window detected. Waiting for toolbar...");
   
@@ -77,14 +78,32 @@ async function initializeComposeWindow(composeWindow) {
   windowTrackerIds.set(composeWindow, trackingId);
   console.log("Gmail Tracker: Assigned tracking ID", trackingId);
 
-  // Pre-inject the pixel, waiting for the body to be ready
+  // 1. Initial Injection
   injectPixel(composeWindow, trackingId);
 
+  // 2. SELF-HEALING: Periodically ensure pixel is still there
+  const persistenceInterval = setInterval(() => {
+    if (!document.contains(composeWindow)) {
+      clearInterval(persistenceInterval);
+      return;
+    }
+    injectPixel(composeWindow, trackingId);
+  }, 2000);
+
+  // 3. OBSERVER: Re-inject if body content changes or other extensions wipe it
+  const bodyObserver = new MutationObserver(() => {
+    injectPixel(composeWindow, trackingId);
+  });
+
+  waitForElement(composeWindow, SELECTORS.messageBody).then(body => {
+    if (body) {
+      bodyObserver.observe(body, { childList: true, subtree: false });
+    }
+  });
+
   const attachSendListener = async () => {
-    // Try to find any button that looks like a send button
     const sendButton = await waitForElement(composeWindow, SELECTORS.sendButton);
     if (sendButton) {
-      // Use capture: true to ensure we get it first
       sendButton.addEventListener('mousedown', () => handleSend(composeWindow), true);
       sendButton.addEventListener('click', () => handleSend(composeWindow), true);
       console.log("Gmail Tracker: Send listeners attached.");
@@ -92,11 +111,10 @@ async function initializeComposeWindow(composeWindow) {
   };
   attachSendListener();
 
-  // FALLBACK: Listen for any click in the compose window and check for "Send" role/text
+  // FALLBACK: Listen for any click in the compose window
   composeWindow.addEventListener('click', (e) => {
     const target = e.target.closest('[role="button"]');
     if (target && (target.innerText.includes('Send') || target.getAttribute('data-tooltip')?.includes('Send'))) {
-      console.log("Gmail Tracker: Send detected via fallback click.");
       handleSend(composeWindow);
     }
   }, true);
@@ -117,6 +135,9 @@ async function handleSend(composeWindow) {
   if (isTrackEnabled === false || !trackingId) {
       return;
   }
+
+  // Ensure pixel is there one last time right before send
+  await injectPixel(composeWindow, trackingId);
 
   console.log("Gmail Tracker: Send detected. Registering metadata for ID:", trackingId);
   composeWindow.dataset.mtSent = 'true';
@@ -140,31 +161,33 @@ async function handleSend(composeWindow) {
   }, (response) => {
     if (chrome.runtime.lastError) {
       console.error("Gmail Tracker: Registration error:", chrome.runtime.lastError);
-    } else if (response && response.success) {
-      console.log("Gmail Tracker: Registered successfully.");
     }
   });
 }
 
 async function injectPixel(composeWindow, id) {
-  console.log("Gmail Tracker: Waiting for message body to inject pixel...");
-  const body = await waitForElement(composeWindow, SELECTORS.messageBody);
-  
-  if (!body) {
-      console.error("Gmail Tracker: Body not found. Pixel injection failed.");
-      return;
-  }
+  const isTrackEnabled = composeWindow.querySelector('#mt-track-checkbox')?.checked;
+  if (isTrackEnabled === false) return;
+
+  const body = composeWindow.querySelector(SELECTORS.messageBody);
+  if (!body) return;
+
+  // If already present, don't re-inject
+  if (body.querySelector(`img[data-tracker-id="${id}"]`)) return;
 
   chrome.runtime.sendMessage({ action: "getSettings" }, (settings) => {
+    if (!settings) return;
     const portalUrl = settings.portalUrl || "https://mail-tracker-ten.vercel.app";
     const trackUrl = `${portalUrl}/api/track/${id}?t=${Date.now()}`;
     
+    // Double check again inside async
     if (body.querySelector(`img[data-tracker-id="${id}"]`)) return;
 
     const pixelHtml = `<img src="${trackUrl}" width="1" height="1" style="display:none !important;" data-tracker-id="${id}" />`;
     
-    // Insert at the START of the body to be safer
+    // Insert at the START of the body
     body.insertAdjacentHTML('afterbegin', pixelHtml);
-    console.log("Gmail Tracker: Pixel injected (afterbegin).", id);
+    console.log("Gmail Tracker: Pixel verified/injected.", id);
   });
 }
+
